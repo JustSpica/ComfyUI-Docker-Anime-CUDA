@@ -29,15 +29,39 @@ After startup, open `http://localhost:8188`.
 
 ## Project layout
 
-The container image is defined in `Dockerfile`, while `docker-compose.yml` configures runtime details such as GPU access, ports, environment variables, and volumes. Bootstrap logic lives in `init_scripts`: `entrypoint.sh` starts the flow, `init_extensions.sh` handles extension installation/update, and `init_models.sh` handles model downloads. Shared helpers are centralized in `init_scripts/config.sh`, and `check_models_url.sh` is available to validate model URLs before or after changes.
+```text
+.
+├── Dockerfile
+├── docker-compose.yml
+├── models.conf
+├── extensions.conf
+├── check_models_url.sh
+├── init_scripts/
+│   ├── entrypoint.sh
+│   ├── init_models.sh
+│   ├── init_extensions.sh
+│   └── config.sh
+├── workflows/
+├── models/
+├── custom_nodes/
+├── input/
+└── output/
+```
+
+`Dockerfile` defines the base CUDA image, and `docker-compose.yml` handles runtime settings (GPU, ports, volumes, environment variables). Bootstrap scripts live in `init_scripts/`: `entrypoint.sh` orchestrates startup, `init_models.sh` downloads models from `models.conf`, and `init_extensions.sh` manages custom nodes listed in `extensions.conf`.
 
 ## Models
 
-Model bootstrap is controlled by `models.conf`. 
+Model bootstrap is controlled by `models.conf`. This repository is intentionally minimal by default and the current model set is:
 
-This repository is intentionally minimal by default and currently ships only `animagine-xl-4.0-opt.safetensors`. 
+| Section | File | Purpose |
+|---|---|---|
+| `CHECKPOINTS` | `animagine-xl-4.0-opt.safetensors` | Main anime image model for low VRAM generation (SDXL). |
+| `CHECKPOINTS` | `sd15-v1-5-pruned-emaonly.safetensors` | SD1.5 checkpoint used for AnimateDiff-Lightning workflows. |
+| `LORAS` | `sdxl-extremely-detailed.safetensors` | Detail enhancer LoRA for richer micro-textures. |
+| `CUSTOM` | `animatediff_lightning_4step_comfyui.safetensors` | AnimateDiff-Lightning motion module for animation/cinemagraph pipelines. |
 
-You can extend it by adding URLs under sections such as `[CHECKPOINTS]`, `[LORAS]`, and `[VAE]`. At startup, only missing files are downloaded, so existing files are reused.
+You can add more entries under sections like `[CHECKPOINTS]`, `[LORAS]`, and `[CUSTOM]`. On startup, only missing files are downloaded.
 
 If you update URLs or suspect a provider link is broken, run:
 
