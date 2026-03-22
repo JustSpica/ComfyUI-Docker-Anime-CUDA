@@ -1,0 +1,14 @@
+# Ignore all ComfyUI folders
+/models/
+/input/
+/output/
+/custom_nodes/
+
+# Ignore venv
+/venv/
+
+# Compose override, env files, logs, etc
+docker-compose.override.yml
+.env
+*.log
+.nfs*

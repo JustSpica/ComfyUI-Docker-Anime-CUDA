@@ -1,0 +1,36 @@
+services:
+  comfyui-anime:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        COMFYUI_REF: "latest-tag"
+    image: comfyui-anime:local
+    container_name: comfyui-anime
+    ports:
+      - "8188:8188"
+    gpus: all
+    shm_size: "8gb"
+    environment:
+      CLI_ARGS: "--listen --port 8188 --enable-cors-header * --lowvram"
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "all"
+    volumes:
+      - ./models:/app/ComfyUI/models
+      - ./input:/app/ComfyUI/input
+      - ./output:/app/ComfyUI/output
+      - ./custom_nodes:/app/ComfyUI/custom_nodes
+      - comfyui_anime_venv:/venv
+      - ./extensions.conf:/app/config/extensions.conf:ro
+      - ./models.conf:/app/config/models.conf:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+volumes:
+  comfyui_anime_venv:
+    name: comfyui_anime_venv
+    driver: local

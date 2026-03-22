@@ -1,0 +1,10 @@
+# Skip local runtime data from build context.
+models/
+output/
+input/
+custom_nodes/
+
+# Skip VCS and temp files.
+.git/
+*.log
+__pycache__/
