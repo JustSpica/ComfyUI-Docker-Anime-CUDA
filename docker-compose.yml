@@ -16,11 +16,13 @@ services:
       NVIDIA_VISIBLE_DEVICES: "all"
       NVIDIA_DRIVER_CAPABILITIES: "all"
     volumes:
-      - ./models:/app/ComfyUI/models
-      - ./input:/app/ComfyUI/input
-      - ./output:/app/ComfyUI/output
-      - ./custom_nodes:/app/ComfyUI/custom_nodes
       - comfyui_anime_venv:/venv
+      - ./custom_nodes:/app/ComfyUI/custom_nodes
+      - ./input:/app/ComfyUI/input
+      - ./models:/app/ComfyUI/models
+      - ./output:/app/ComfyUI/output
+      - ./workflows:/app/ComfyUI/user/default/workflows
+      - ./comfy.settings.json:/app/ComfyUI/user/default/comfy.settings.json
       - ./extensions.conf:/app/config/extensions.conf:ro
       - ./models.conf:/app/config/models.conf:ro
     deploy:
