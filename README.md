@@ -8,6 +8,7 @@ In practice, this setup focuses on four things:
 - Preserving all important data on the host
 - Automating model downloads from config
 - Automating `custom_nodes` installation/update in a repeatable way.
+- Keeping workflow files synced between host and container.
 
 ## Quick start
 
@@ -36,6 +37,7 @@ After startup, open `http://localhost:8188`.
 ├── models.conf
 ├── extensions.conf
 ├── check_models_url.sh
+├── comfy.settings.json
 ├── init_scripts/
 │   ├── entrypoint.sh
 │   ├── init_models.sh
@@ -52,18 +54,18 @@ After startup, open `http://localhost:8188`.
 
 ## Models
 
-Model bootstrap is controlled by `models.conf`. This repository is intentionally minimal by default and the current model set is:
+Model bootstrap is controlled by `models.conf`. The current default model set is:
 
 | Section | File | Purpose |
 |---|---|---|
 | `CHECKPOINTS` | `animagine-xl-4.0-opt.safetensors` | Main anime image model for low VRAM generation (SDXL). |
-| `CHECKPOINTS` | `sd15-v1-5-pruned-emaonly.safetensors` | SD1.5 checkpoint used for AnimateDiff-Lightning workflows. |
 | `LORAS` | `sdxl-extremely-detailed.safetensors` | Detail enhancer LoRA for richer micro-textures. |
-| `CUSTOM` | `animatediff_lightning_4step_comfyui.safetensors` | AnimateDiff-Lightning motion module for animation/cinemagraph pipelines. |
+| `LORAS` | `dmd2_sdxl_4step_lora_fp16.safetensors` | SDXL acceleration LoRA for faster sampling-style workflows. |
+| `UPSCALE_MODELS` | `4x-UltraSharp.pth` | 4x upscaler for sharper outputs and detail recovery. |
 
-You can add more entries under sections like `[CHECKPOINTS]`, `[LORAS]`, and `[CUSTOM]`. On startup, only missing files are downloaded.
+You can add more entries under sections like `[CHECKPOINTS]` and `[LORAS]`. On startup, only missing files are downloaded.
 
-If you update URLs or suspect a provider link is broken, run:
+If you update URLs or suspect a provider link is broken, run the URL checker first:
 
 ```bash
 bash check_models_url.sh
@@ -77,7 +79,7 @@ This keeps the environment more stable and reproducible than relying only on man
 
 ## Persistence and dependency hygiene
 
-Persistent data is stored on the host through bind mounts (`./models`, `./input`, `./output`, and `./custom_nodes`). The extension runtime virtual environment is stored in the Docker volume `comfyui_anime_venv`, which helps keep dependency state separate from the image layers while still allowing clean resets when needed.
+Persistent data is stored on the host through bind mounts (`./models`, `./input`, `./output`, `./workflows`, and `./custom_nodes`). The extension runtime virtual environment is stored in the Docker volume `comfyui_anime_venv`, which helps keep dependency state separate from the image layers while still allowing clean resets when needed.
 
 If image updates or extension changes lead to import/dependency issues (`torch`, `xformers`, `torchaudio`, `pip`, etc.), recreate the extension runtime with:
 
