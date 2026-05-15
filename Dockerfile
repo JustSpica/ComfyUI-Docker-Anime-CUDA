@@ -101,6 +101,7 @@ FROM base
 USER root
 
 # Bootstrap scripts and default config files.
+COPY --chown=1000:1000 init_scripts/url_utils.sh /usr/local/bin/url_utils.sh
 COPY --chown=1000:1000 init_scripts/config.sh /usr/local/bin/config.sh
 COPY --chown=1000:1000 init_scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY --chown=1000:1000 init_scripts/init_extensions.sh /usr/local/bin/init_extensions.sh
@@ -109,14 +110,10 @@ COPY --chown=1000:1000 extensions.conf /app/config/extensions.conf
 COPY --chown=1000:1000 models.conf /app/config/models.conf
 
 # Normalize line endings from Windows hosts and mark scripts executable.
-RUN sed -i 's/\r$//' /usr/local/bin/config.sh && \
-    sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && \
-    sed -i 's/\r$//' /usr/local/bin/init_extensions.sh && \
-    sed -i 's/\r$//' /usr/local/bin/init_models.sh && \
-    chmod +x /usr/local/bin/config.sh \
-    /usr/local/bin/entrypoint.sh \
-    /usr/local/bin/init_extensions.sh \
-    /usr/local/bin/init_models.sh
+RUN for script in url_utils.sh config.sh entrypoint.sh init_extensions.sh init_models.sh; do \
+      sed -i 's/\r$//' "/usr/local/bin/${script}" && \
+      chmod +x "/usr/local/bin/${script}"; \
+    done
 
 USER 1000
 WORKDIR ${COMFYUI_DIR}

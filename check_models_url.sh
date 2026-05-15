@@ -1,50 +1,36 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Shared URL/text utilities.
+source "$(cd "$(dirname "$0")" && pwd)/init_scripts/url_utils.sh"
+
 # Optional first arg overrides default models.conf path.
 CONF_FILE="${1:-models.conf}"
 
-# Keep parser behavior aligned with init scripts.
-trim() {
-  local value="$1"
-  value="${value#"${value%%[![:space:]]*}"}"
-  value="${value%"${value##*[![:space:]]}"}"
-  printf '%s' "${value}"
-}
+readonly URL_CHECK_CONNECT_TIMEOUT=15
+readonly URL_CHECK_MAX_TIME=30
+readonly URL_CHECK_MAX_FILESIZE=1048576
 
-strip_comment_and_trim() {
-  local line="$1"
-  line="${line%%#*}"
-  line="${line%%;*}"
-  trim "${line}"
-}
-
-is_civitai_url() {
-  local url="$1"
-  [[ "${url}" =~ ^https?://([^/]+\.)?civitai\.(com|red)(/|$) ]]
-}
-
+# 2xx and 3xx are considered reachable. 3xx is accepted because Civitai
+# URLs are probed without --location, so a redirect is a valid response.
 http_success() {
   local http_code="$1"
   [[ "${http_code}" =~ ^[23][0-9][0-9]$ ]]
 }
 
-load_env_file() {
+load_civitai_api_key_from_env_file() {
   local env_file="${1:-.env}"
   local raw_line=""
   local line=""
-  local key=""
   local value=""
 
+  [ -n "${CIVITAI_API_KEY+x}" ] && return 0
   [ -f "${env_file}" ] || return 0
 
   while IFS= read -r raw_line || [ -n "${raw_line}" ]; do
     line="$(strip_comment_and_trim "${raw_line}")"
-    [ -z "${line}" ] && continue
-    [[ "${line}" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || continue
-
-    key="${line%%=*}"
-    value="${line#*=}"
+    [[ "${line}" == CIVITAI_API_KEY=* ]] || continue
+    value="${line#CIVITAI_API_KEY=}"
 
     if [[ "${value}" =~ ^\"(.*)\"$ ]]; then
       value="${BASH_REMATCH[1]}"
@@ -52,58 +38,9 @@ load_env_file() {
       value="${BASH_REMATCH[1]}"
     fi
 
-    if [ -z "${!key+x}" ]; then
-      export "${key}=${value}"
-    fi
-  done < "${env_file}"
-}
-
-get_civitai_api_key() {
-  if [ -n "${CIVITAI_API_KEY:-}" ]; then
-    printf '%s' "${CIVITAI_API_KEY}"
-  fi
-}
-
-urlencode() {
-  local value="$1"
-  local encoded=""
-  local char=""
-  local index=0
-
-  for ((index = 0; index < ${#value}; index++)); do
-    char="${value:index:1}"
-    case "${char}" in
-      [a-zA-Z0-9.~_-]) encoded+="${char}" ;;
-      *) printf -v encoded '%s%%%02X' "${encoded}" "'${char}" ;;
-    esac
-  done
-
-  printf '%s' "${encoded}"
-}
-
-append_query_param() {
-  local url="$1"
-  local key="$2"
-  local value="$3"
-  local separator="?"
-
-  [[ "${url}" == *"?"* ]] && separator="&"
-
-  printf '%s%s%s=%s' "${url}" "${separator}" "${key}" "$(urlencode "${value}")"
-}
-
-civitai_authenticated_url() {
-  local url="$1"
-  local api_key=""
-
-  api_key="$(get_civitai_api_key)"
-
-  if [ -z "${api_key}" ] || [[ "${url}" =~ (^|[?\&])token= ]]; then
-    printf '%s' "${url}"
+    export CIVITAI_API_KEY="${value}"
     return 0
-  fi
-
-  append_query_param "${url}" "token" "${api_key}"
+  done < "${env_file}"
 }
 
 civitai_auth_failure_message() {
@@ -116,7 +53,7 @@ civitai_auth_failure_message() {
   fi
 }
 
-load_env_file ".env"
+load_civitai_api_key_from_env_file ".env"
 
 if [ ! -f "${CONF_FILE}" ]; then
   printf 'Config file not found: %s\n' "${CONF_FILE}" >&2
@@ -133,19 +70,19 @@ extract_url() {
     left="$(trim "${entry%%|*}")"
     right="$(trim "${entry#*|}")"
 
-    if [[ "${left}" =~ ^https?:// ]]; then
+    if is_http_url "${left}"; then
       printf '%s\n' "${left}"
       return
     fi
 
-    if [[ "${right}" =~ ^https?:// ]]; then
+    if is_http_url "${right}"; then
       printf '%s\n' "${right}"
       return
     fi
   fi
 
   # URL only
-  if [[ "${entry}" =~ ^https?:// ]]; then
+  if is_http_url "${entry}"; then
     printf '%s\n' "${entry}"
     return
   fi
@@ -153,71 +90,75 @@ extract_url() {
   # relative/path:URL (CUSTOM/GIT_REPOS style)
   if [[ "${entry}" == *":"* ]]; then
     right="$(trim "${entry#*:}")"
-    if [[ "${right}" =~ ^https?:// ]]; then
+    if is_http_url "${right}"; then
       printf '%s\n' "${right}"
     fi
   fi
 }
 
+# Runs a single curl probe and prints "http_code curl_exit_status".
+probe_url() {
+  local request_url="$1"
+  shift
+  local curl_status=0
+  local http_code=""
+
+  http_code="$(curl --silent "$@" \
+    --connect-timeout "${URL_CHECK_CONNECT_TIMEOUT}" \
+    --max-time "${URL_CHECK_MAX_TIME}" \
+    --output /dev/null \
+    --write-out '%{http_code}' \
+    "${request_url}")" || curl_status=$?
+
+  printf '%s %s' "${http_code}" "${curl_status}"
+}
+
+# Evaluate a probe result: print 'ok' on success, auth message on Civitai 401/403.
+# Returns 0 (success), 1 (permanent auth failure), 2 (try next probe).
+evaluate_probe() {
+  local url="$1"
+  local http_code="$2"
+
+  if http_success "${http_code}"; then
+    printf 'ok'
+    return 0
+  fi
+
+  if is_civitai_url "${url}" && http_auth_failure "${http_code}"; then
+    civitai_auth_failure_message "${http_code}"
+    return 1
+  fi
+
+  return 2
+}
+
 check_url() {
   local url="$1"
   local request_url="${url}"
-  local http_code=""
-  local curl_status=0
-  local curl_auth_args=()
   local curl_location_args=(--location)
-  local api_key=""
-
-  api_key="$(get_civitai_api_key)"
-
-  if is_civitai_url "${url}" && [ -n "${api_key}" ]; then
-    request_url="$(civitai_authenticated_url "${url}")"
-    curl_auth_args=(-H "Authorization: Bearer ${api_key}")
-  fi
+  local probe_result="" http_code="" curl_status=""
 
   if is_civitai_url "${url}"; then
+    local api_key=""
+    api_key="$(get_civitai_api_key)"
+    [ -n "${api_key}" ] && request_url="$(civitai_authenticated_url "${url}")"
     curl_location_args=()
   fi
 
-  http_code="$(curl --silent "${curl_location_args[@]}" --head \
-    --connect-timeout 15 \
-    --max-time 30 \
-    "${curl_auth_args[@]}" \
-    --output /dev/null \
-    --write-out '%{http_code}' \
-    "${request_url}")" || curl_status=$?
-
-  if http_success "${http_code}"; then
-    printf 'ok'
-    return 0
-  fi
-
-  if is_civitai_url "${url}" && { [ "${http_code}" = "401" ] || [ "${http_code}" = "403" ]; }; then
-    civitai_auth_failure_message "${http_code}"
-    return 1
-  fi
+  # Try HEAD first.
+  probe_result="$(probe_url "${request_url}" "${curl_location_args[@]}" --head)"
+  http_code="${probe_result%% *}"
+  curl_status="${probe_result##* }"
+  evaluate_probe "${url}" "${http_code}" && return 0
+  [ $? -eq 1 ] && return 1
 
   # Some hosts reject HEAD but accept GET. Request only one byte and cap payload.
-  curl_status=0
-  http_code="$(curl --silent "${curl_location_args[@]}" --request GET \
-    --range 0-0 \
-    --connect-timeout 15 \
-    --max-time 30 \
-    --max-filesize 1048576 \
-    "${curl_auth_args[@]}" \
-    --output /dev/null \
-    --write-out '%{http_code}' \
-    "${request_url}")" || curl_status=$?
-
-  if http_success "${http_code}"; then
-    printf 'ok'
-    return 0
-  fi
-
-  if is_civitai_url "${url}" && { [ "${http_code}" = "401" ] || [ "${http_code}" = "403" ]; }; then
-    civitai_auth_failure_message "${http_code}"
-    return 1
-  fi
+  probe_result="$(probe_url "${request_url}" "${curl_location_args[@]}" \
+    --request GET --range 0-0 --max-filesize "${URL_CHECK_MAX_FILESIZE}")"
+  http_code="${probe_result%% *}"
+  curl_status="${probe_result##* }"
+  evaluate_probe "${url}" "${http_code}" && return 0
+  [ $? -eq 1 ] && return 1
 
   if [ -n "${http_code}" ] && [ "${http_code}" != "000" ]; then
     printf 'HTTP %s' "${http_code}"
@@ -240,12 +181,13 @@ while IFS= read -r raw_line || [ -n "${raw_line}" ]; do
 
   url="$(extract_url "${line}" || true)"
   [ -z "${url}" ] && continue
+  display_url="$(redact_url_token "${url}")"
 
   if result="$(check_url "${url}")"; then
-    printf '[OK]    %s\n' "${url}"
+    printf '[OK]    %s\n' "${display_url}"
     ok_count=$((ok_count + 1))
   else
-    printf '[FAIL]  %s (%s)\n' "${url}" "${result}"
+    printf '[FAIL]  %s (%s)\n' "${display_url}" "${result}"
     failed_count=$((failed_count + 1))
   fi
 done < "${CONF_FILE}"

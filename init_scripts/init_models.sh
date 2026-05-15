@@ -39,8 +39,8 @@ done
 download_entry() {
   local section_dir="$1"
   local entry="$2"
-  local left=""
-  local right=""
+  local before_pipe=""
+  local after_pipe=""
   local url=""
   local target_path=""
 
@@ -49,20 +49,20 @@ download_entry() {
   # 2) relative/path|URL (legacy)
   # 3) URL
   if [[ "${entry}" == *"|"* ]]; then
-    left="$(trim "${entry%%|*}")"
-    right="$(trim "${entry#*|}")"
+    before_pipe="$(trim "${entry%%|*}")"
+    after_pipe="$(trim "${entry#*|}")"
 
     # Supported form A: URL|custom_filename
-    if [[ "${left}" =~ ^https?:// ]]; then
-      url="${left}"
-      right="${right#/}"
-      target_path="${MODELS_DIR}/${section_dir}/${right}"
+    if [[ "${before_pipe}" =~ ^https?:// ]]; then
+      url="${before_pipe}"
+      after_pipe="${after_pipe#/}"
+      target_path="${MODELS_DIR}/${section_dir}/${after_pipe}"
 
     # Supported form B: relative/path|URL (legacy compatibility)
-    elif [[ "${right}" =~ ^https?:// ]]; then
-      url="${right}"
-      left="${left#/}"
-      target_path="${MODELS_DIR}/${left}"
+    elif [[ "${after_pipe}" =~ ^https?:// ]]; then
+      url="${after_pipe}"
+      before_pipe="${before_pipe#/}"
+      target_path="${MODELS_DIR}/${before_pipe}"
     fi
   elif [[ "${entry}" =~ ^https?:// ]]; then
     # Supported form C: URL only, keeps original file name.
