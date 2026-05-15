@@ -71,6 +71,20 @@ If you update URLs or suspect a provider link is broken, run the URL checker fir
 bash check_models_url.sh
 ```
 
+Some Civitai assets require a logged-in account, paid/early access, or explicit account permission. For those URLs, create a Civitai API key and expose it as `CIVITAI_API_KEY` before checking URLs or starting Docker:
+
+```bash
+export CIVITAI_API_KEY="your-civitai-api-key"
+bash check_models_url.sh
+docker compose up -d
+```
+
+You can also put the key in `.env`; this repository already ignores `.env`, and `check_models_url.sh` loads it automatically.
+
+```env
+CIVITAI_API_KEY=your-civitai-api-key
+```
+
 ## Extensions
 
 Extensions are listed in `extensions.conf`. On startup, the project clones or updates each repository into `./custom_nodes`, installs extension dependencies (from `requirements.txt` and/or `install.py` when present), and records commits in `custom_nodes/.last_commits` to skip unnecessary reinstalls. 

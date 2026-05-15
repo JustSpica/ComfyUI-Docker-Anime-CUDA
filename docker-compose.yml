@@ -13,6 +13,7 @@ services:
     shm_size: "8gb"
     environment:
       CLI_ARGS: "--listen --port 8188 --enable-cors-header * --lowvram"
+      CIVITAI_API_KEY: "${CIVITAI_API_KEY:-}"
       NVIDIA_VISIBLE_DEVICES: "all"
       NVIDIA_DRIVER_CAPABILITIES: "all"
     volumes:
