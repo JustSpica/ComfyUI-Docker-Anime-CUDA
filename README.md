@@ -30,7 +30,7 @@ A reproducible, GPU-accelerated [ComfyUI](https://github.com/comfyanonymous/Comf
 - Linux host with the NVIDIA driver installed.
 - Docker Engine with the NVIDIA Container Toolkit (`gpus: all` support).
 - A CUDA-capable NVIDIA GPU. Defaults are tuned for 8 GB VRAM cards (e.g. RTX 4060).
-- At least ~20 GB of free disk space for the image, base models, and outputs.
+- If you want to keep the models defined in `models.conf`, you will need at least ~70 GB of free disk space for the image, base models, and outputs.
 
 ## Quick start
 
