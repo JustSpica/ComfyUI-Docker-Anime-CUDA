@@ -97,32 +97,34 @@ The default selection reflects my personal preferences for anime art generation 
 
 **Checkpoints**
 
-| File | Family | Notes |
-|---|---|---|
-| [`animagine-xl-4.0-opt.safetensors`](https://huggingface.co/cagliostrolab/animagine-xl-4.0) | SDXL | Cagliostro Lab's anime SDXL tuned for low VRAM. |
-| [`waiIllustriousSDXL_v170.safetensors`](https://civitai.com/models/827184) | Illustrious | General-purpose Illustrious checkpoint with broad style coverage. |
-| [`novaAnimeXL_ilV190.safetensors`](https://civitai.com/models/376130) | Illustrious | Higher contrast and richer background detail. |
-| [`novaOrangeXL_rexV10.safetensors`](https://civitai.com/models/967405) | Illustrious | Focused on expressive posing and dramatic lighting. |
-| [`rinFlanimeIllustrious_v30.safetensors`](https://civitai.com/models/1544647) | Illustrious | Flat-anime style with clean linework and saturated colors. |
-| [`plantMilkModelSuite_walnut.safetensors`](https://civitai.com/models/1162518) | Illustrious | Anime art (Euler / low CFG / ~28 steps). |
-| [`JANKUTrainedChenkinNoobai_v777.safetensors`](https://civitai.com/models/1277670) | Illustrious | Thicker linework and detailed backgrounds. |
+The NSFW column reflects how the upstream model is flagged on Civitai (or whether the upstream Hugging Face card targets explicit content). A `❌` does not guarantee SFW-only output — most Illustrious-derived checkpoints can generate explicit imagery with the right prompts; it only indicates how the author classified the model.
+
+| File | Family | NSFW | Notes |
+|---|---|---|---|
+| [`animagine-xl-4.0-opt.safetensors`](https://huggingface.co/cagliostrolab/animagine-xl-4.0) | SDXL | ❌ | Cagliostro Lab's anime SDXL tuned for low VRAM. |
+| [`waiIllustriousSDXL_v170.safetensors`](https://civitai.com/models/827184) | Illustrious | ✅ | General-purpose Illustrious checkpoint with broad style coverage. |
+| [`novaAnimeXL_ilV190.safetensors`](https://civitai.com/models/376130) | Illustrious | ❌ | Higher contrast and richer background detail. |
+| [`novaOrangeXL_rexV10.safetensors`](https://civitai.com/models/967405) | Illustrious | ❌ | Focused on expressive posing and dramatic lighting. |
+| [`rinFlanimeIllustrious_v30.safetensors`](https://civitai.com/models/1544647) | Illustrious | ✅ | Flat-anime style with clean linework and saturated colors. |
+| [`plantMilkModelSuite_walnut.safetensors`](https://civitai.com/models/1162518) | Illustrious | ❌ | Anime art (Euler / low CFG / ~28 steps). |
+| [`JANKUTrainedChenkinNoobai_v777.safetensors`](https://civitai.com/models/1277670) | Illustrious | ❌ | Thicker linework and detailed backgrounds. |
 
 **LoRAs** (Illustrious-compatible unless noted)
 
-| File | Trigger | Notes |
-|---|---|---|
-| [`sdxl-extremely-detailed.safetensors`](https://huggingface.co/ntc-ai/SDXL-LoRA-slider.extremely-detailed) | `extremely detailed` |Detail booster (SDXL slider). |
-| [`dmd2_sdxl_4step_lora_fp16.safetensors`](https://huggingface.co/tianweiy/DMD2) | — | SDXL acceleration for 4-step sampling. |
-| [`AddMicroDetails_Illustrious_v6.safetensors`](https://civitai.com/models/1377820) | `addmicrodetails` | Surface-level detail enhancer. |
-| [`748cmSDXL.safetensors`](https://civitai.com/models/943607) | `748cmstyle` | 748cm anime style. |
-| [`pixel-Illustrius.safetensors`](https://civitai.com/models/43820) | `pixel` | Pixel-art style. |
-| [`skormino-sprite-pixel-art.safetensors`](https://civitai.com/models/1631459) | `pixpix`, `8-bit`, `pixel_art` | 8-bit sprite pixel art. |
-| [`Anime_artistic_2.safetensors`](https://civitai.com/models/1586542) | `Art8st`, `Anime2rt`, `Semi2realistic` | Versatile artistic/semi-realistic anime style. |
-| [`MoriiMee_Gothic_Realistic.safetensors`](https://civitai.com/models/915918) | — | Gothic character art (pale tones, dark fashion). |
-| [`iLLC0lorL1nes.safetensors`](https://civitai.com/models/599757) | `C0lorL1nes` | Vibrant colorful line effects. |
-| [`Niji_Semi_realism_F_N_R_epoch_10.safetensors`](https://civitai.com/models/534506) | `SemiFrealism`, `SemiNrealism`, `SemiRrealism` | Semi-realistic anime style. |
-| [`ck-shadow-circuit-IL.safetensors`](https://civitai.com/models/938811) | `in the style of cksc` | Neurocore shadow/lighting style. |
-| [`Aura_Phantasy_illu.safetensors`](https://civitai.com/models/1310467) | `4ur4_illu`, `shiny` | Shiny anime style with auras and glowing effects. |
+| File | Trigger | NSFW | Notes |
+|---|---|---|---|
+| [`sdxl-extremely-detailed.safetensors`](https://huggingface.co/ntc-ai/SDXL-LoRA-slider.extremely-detailed) | `extremely detailed` | ❌ | Detail booster (SDXL slider). |
+| [`dmd2_sdxl_4step_lora_fp16.safetensors`](https://huggingface.co/tianweiy/DMD2) | — | ❌ | SDXL acceleration for 4-step sampling. |
+| [`AddMicroDetails_Illustrious_v6.safetensors`](https://civitai.com/models/1377820) | `addmicrodetails` | ❌ | Surface-level detail enhancer. |
+| [`748cmSDXL.safetensors`](https://civitai.com/models/943607) | `748cmstyle` | ❌ | 748cm anime style. |
+| [`pixel-Illustrius.safetensors`](https://civitai.com/models/43820) | `pixel` | ❌ | Pixel-art style. |
+| [`skormino-sprite-pixel-art.safetensors`](https://civitai.com/models/1631459) | `pixpix`, `8-bit`, `pixel_art` | ✅ | 8-bit sprite pixel art. |
+| [`Anime_artistic_2.safetensors`](https://civitai.com/models/1586542) | `Art8st`, `Anime2rt`, `Semi2realistic` | ❌ | Versatile artistic/semi-realistic anime style. |
+| [`MoriiMee_Gothic_Realistic.safetensors`](https://civitai.com/models/915918) | — | ✅ | Gothic character art (pale tones, dark fashion). |
+| [`iLLC0lorL1nes.safetensors`](https://civitai.com/models/599757) | `C0lorL1nes` | ❌ | Vibrant colorful line effects. |
+| [`Niji_Semi_realism_F_N_R_epoch_10.safetensors`](https://civitai.com/models/534506) | `SemiFrealism`, `SemiNrealism`, `SemiRrealism` | ❌ | Semi-realistic anime style. |
+| [`ck-shadow-circuit-IL.safetensors`](https://civitai.com/models/938811) | `in the style of cksc` | ❌ | Neurocore shadow/lighting style. |
+| [`Aura_Phantasy_illu.safetensors`](https://civitai.com/models/1310467) | `4ur4_illu`, `shiny` | ❌ | Shiny anime style with auras and glowing effects. |
 
 **Upscalers**
 
